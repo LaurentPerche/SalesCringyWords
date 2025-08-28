@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sales Cringe Words — Vote to Ban!</title>
+  <style>
+    :root{
+      --bg:#0b1020; --card:#121a33; --ink:#e8ecff; --muted:#9aa4c7; --accent:#7aa2ff; --accent-2:#5df2c6; --danger:#ff6b6b;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%; overflow-x:hidden}
+    body{margin:0; font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; background:radial-gradient(80rem 40rem at 10% -10%, #1a264d 0, transparent 60%), radial-gradient(60rem 30rem at 110% 10%, #15213f 0, transparent 60%), var(--bg); color:var(--ink)}
+    .app{width:min(960px, 100%); margin:0 auto; padding:24px}
+    .main-content{min-height:90vh; display:flex; flex-direction:column; justify-content:center; align-items:center}
+    .content-wrapper{width:100%; max-width:100%}
+    .leaderboard-container{padding:24px 0; background:var(--bg); margin-top:-10vh}
+    .leaderboard-preview{max-height:80px; overflow:hidden; position:relative}
+    .leaderboard-preview::after{content:''; position:absolute; bottom:0; left:0; right:0; height:20px; background:linear-gradient(transparent, var(--card)); pointer-events:none}
+    .leaderboard.full-view .leaderboard-preview{max-height:none}
+    .leaderboard.full-view .leaderboard-preview::after{display:none}
+    .toolbar-wrapper{margin-bottom:20px}
+    h1{font-size:clamp(18px, 3vw, 24px); margin:0; font-weight:700; letter-spacing:.3px}
+    .meta{font-size:13px; color:var(--muted)}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0)); border:1px solid rgba(255,255,255,.06); border-radius:16px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.2)}
+    .grid{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:16px}
+    .word{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 24px; background:var(--card); border:1px solid rgba(255,255,255,.06); border-radius:16px; cursor:pointer; user-select:none; transition:transform .06s ease, border-color .15s ease, background .15s ease; font-size:16px}
+    .word:hover{transform:translateY(-1px); border-color:rgba(122,162,255,.5)}
+    .label{font-weight:600; letter-spacing:.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:16px}
+    .count{min-width:40px; text-align:center; padding:.4rem .6rem; border-radius:999px; background:linear-gradient(90deg, var(--accent), var(--accent-2)); color:#0a1230; font-weight:800; font-size:16px}
+    .toolbar{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+    button{appearance:none; border:1px solid rgba(255,255,255,.12); background:#0f1630; color:var(--ink); border-radius:10px; padding:8px 12px; font-weight:600; cursor:pointer; white-space:nowrap}
+    button:hover{border-color:rgba(255,255,255,.32)}
+    input[type="text"]{appearance:none; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05); color:var(--ink); border-radius:12px; padding:16px 24px; font:inherit; font-size:16px; flex:1; min-width:300px}
+    input[type="text"]:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 2px rgba(122,162,255,.2)}
+    input[type="text"]::placeholder{color:var(--muted)}
+    .swap-indicator{font-size:12px; color:var(--muted)}
+    .footer{margin-top:14px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
+    .fade-enter{animation:fadeIn .24s ease-out}
+    .fade-leave{animation:fadeOut .22s ease-in}
+    @keyframes fadeIn{from{opacity:.0; transform:scale(.98)} to{opacity:1; transform:scale(1)}}
+    @keyframes fadeOut{from{opacity:1; transform:scale(1)} to{opacity:0; transform:scale(.98)}}
+    .sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0}
+    
+    /* Leaderboard Styles */
+    .leaderboard{display:block; margin:0 auto; width:100%; cursor:pointer; transition:transform 0.1s ease}
+    .leaderboard:hover{transform:translateY(-2px)}
+    .leaderboard-list{display:flex; flex-direction:column; gap:8px}
+    .leaderboard-item{display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:var(--card); border:1px solid rgba(255,255,255,.08); border-radius:12px; position:relative; overflow:hidden}
+    .leaderboard-item::before{content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(90deg, var(--accent), var(--accent-2))}
+    .leaderboard-rank{font-size:14px; font-weight:800; color:var(--accent); min-width:24px}
+    .leaderboard-word{font-weight:600; flex:1; margin-left:12px}
+    .leaderboard-votes{font-weight:800; color:var(--accent-2); font-size:18px}
+    .leaderboard-item:nth-child(1){border-color:rgba(255,215,0,.3); background:linear-gradient(135deg, rgba(255,215,0,.1), rgba(255,215,0,.05))}
+    .leaderboard-item:nth-child(2){border-color:rgba(192,192,192,.3); background:linear-gradient(135deg, rgba(192,192,192,.1), rgba(192,192,192,.05))}
+    .leaderboard-item:nth-child(3){border-color:rgba(205,127,50,.3); background:linear-gradient(135deg, rgba(205,127,50,.1), rgba(205,127,50,.05))}
+    .leaderboard-emoji{font-size:16px; margin-right:8px}
+    .no-votes{color:var(--muted); font-style:italic; text-align:center; padding:20px}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="main-content">
+      <div class="content-wrapper">
+        <div class="toolbar-wrapper">
+          <div class="toolbar">
+            <input type="text" id="customWordInput" placeholder="Add your own cringe word..." maxlength="50">
+            <button id="addWordBtn" title="Add custom word">➕ Add Word</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div id="grid" class="grid" role="list" aria-label="Words list"></div>
+          <div class="footer">
+            <div class="swap-indicator" id="swapIndicator">New cringe word appears every <strong>5s</strong></div>
+            <div class="meta">
+              Showing <span id="visibleCount">0</span> of <span id="totalCount">0</span> words
+            </div>
+          </div>
+        </div>
+
+        <p class="meta" style="margin-top:10px; text-align:center">
+          <strong>🎯 Click the words you're most tired of hearing!</strong><br>
+          <span style="font-size:13px; opacity:0.7">Scroll down to see more results ↓</span>
+        </p>
+      </div>
+    </div>
+    
+    <div class="leaderboard-container">
+      <div class="card leaderboard" id="leaderboard">
+        <div class="leaderboard-preview">
+          <div class="leaderboard-list" id="leaderboardList">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+      
+      <p class="meta" style="margin-top:20px; text-align:center; padding-bottom:40px">
+        Tip: provide your own list with <code>?words=synergy,circle back,deep dive</code>
+      </p>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    // ======= Configuration =======
+    const VISIBLE_SLOTS = 10;                 // number of words shown at once
+    const SWAP_INTERVAL_MS = 5000;            // one replacement every 5s
+    const PERSIST_WITH_LOCALSTORAGE = true;   // keep counts across reloads on this browser
+
+    // Default cringe sales words — vote to ban the ones you're sick of hearing!
+    const DEFAULT_WORDS = [
+      "synergy","circle back","touch base","low-hanging fruit","move the needle","game changer",
+      "disruptive","best practices","win-win","deep dive","leverage","scalable","pivot",
+      "actionable insights","seamless","robust","cutting-edge","holistic","paradigm shift",
+      "ecosystem","stakeholder","deliverables","bandwidth","pain points","drill down",
+      "ideate","streamline","optimize","maximize","monetize","utilize","facilitate",
+      "innovative","revolutionary","groundbreaking","next-generation","world-class",
+      "enterprise-grade","mission-critical","value-add","buy-in","quick wins"
+    ];
+
+    // ======= Utilities =======
+    const byId = (id)=>document.getElementById(id);
+    const rand = (n)=> Math.floor(Math.random()*n);
+
+    function parseWordsFromQuery(){
+      const params = new URLSearchParams(location.search);
+      const csv = params.get('words');
+      if(!csv) return null;
+      const arr = csv.split(',').map(w=>w.trim()).filter(Boolean);
+      return arr.length ? Array.from(new Set(arr)) : null;
+    }
+
+    function save(key, value){ if(!PERSIST_WITH_LOCALSTORAGE) return; try{ localStorage.setItem(key, JSON.stringify(value)); }catch(e){} }
+    function load(key, fallback){ if(!PERSIST_WITH_LOCALSTORAGE) return fallback; try{ const v = localStorage.getItem(key); return v? JSON.parse(v): fallback; }catch(e){ return fallback; } }
+
+    // ======= State =======
+    const WORDS = (parseWordsFromQuery() || DEFAULT_WORDS).slice();
+    const gridEl = byId('grid');
+    const visibleCountEl = byId('visibleCount');
+    const totalCountEl = byId('totalCount');
+    const swapIndicatorEl = byId('swapIndicator');
+    const leaderboardEl = byId('leaderboard');
+    const leaderboardListEl = byId('leaderboardList');
+
+    // counts[word] = number
+    const counts = load('counts', {});
+    WORDS.forEach(w=>{ if(!(w in counts)) counts[w] = 0; });
+
+    // The current set of visible words (array of strings)
+    let visible = load('visible', []);
+    if(!Array.isArray(visible) || !visible.length){
+      visible = pickDistinct(WORDS, Math.min(VISIBLE_SLOTS, WORDS.length));
+    }else{
+      // Ensure only valid words remain
+      visible = visible.filter(w=>WORDS.includes(w));
+      // Backfill if too few
+      const needed = Math.max(0, Math.min(VISIBLE_SLOTS, WORDS.length) - visible.length);
+      if(needed>0){
+        const pool = WORDS.filter(w=>!visible.includes(w));
+        visible = visible.concat(pickDistinct(pool, needed));
+      }
+      visible = visible.slice(0, Math.min(VISIBLE_SLOTS, WORDS.length));
+    }
+
+    // ======= Rendering =======
+    function render(){
+      totalCountEl.textContent = WORDS.length;
+      visibleCountEl.textContent = visible.length;
+
+      // diff-based render (simple but efficient for 10 items)
+      gridEl.innerHTML = '';
+      for(const word of visible){
+        const item = document.createElement('button');
+        item.className = 'word fade-enter';
+        item.setAttribute('role','listitem');
+        item.setAttribute('aria-label', `${word} clicked ${counts[word]} times`);
+        item.addEventListener('click', ()=> increment(word, item));
+
+        const label = document.createElement('span');
+        label.className = 'label';
+        label.textContent = word;
+
+        const badge = document.createElement('span');
+        badge.className = 'count';
+        badge.textContent = counts[word] ?? 0;
+        badge.setAttribute('aria-hidden','true');
+
+        item.appendChild(label);
+        item.appendChild(badge);
+        gridEl.appendChild(item);
+      }
+    }
+
+    function increment(word, itemEl){
+      counts[word] = (counts[word]||0) + 1;
+      save('counts', counts);
+      // Update the badge within this item
+      const badge = itemEl.querySelector('.count');
+      if(badge) badge.textContent = counts[word];
+      // Update leaderboard
+      renderLeaderboard();
+      // brief tap animation
+      itemEl.style.transform = 'scale(0.98)';
+      setTimeout(()=>{ itemEl.style.transform = ''; }, 60);
+    }
+
+    function pickDistinct(arr, n){
+      const copy = arr.slice();
+      const out = [];
+      n = Math.min(n, copy.length);
+      for(let i=0;i<n;i++){
+        const idx = rand(copy.length);
+        out.push(copy[idx]);
+        copy.splice(idx,1);
+      }
+      return out;
+    }
+
+    // ======= Swapping logic =======
+    function swapOne(){
+      if(WORDS.length <= visible.length) return; // nothing to swap with
+      const removeIdx = rand(visible.length);
+      const currentSet = new Set(visible);
+      const pool = WORDS.filter(w=>!currentSet.has(w));
+      if(!pool.length) return;
+      const replacement = pool[rand(pool.length)];
+
+      // Perform swap
+      const removed = visible[removeIdx];
+      visible[removeIdx] = replacement;
+      save('visible', visible);
+
+      // Re-render only changed slot: simple re-render for small list
+      render();
+      showSwapNote(`${removed} → ${replacement}`);
+    }
+
+    let swapTimer = null;
+    function startSwapping(){
+      stopSwapping();
+      swapTimer = setInterval(swapOne, SWAP_INTERVAL_MS);
+    }
+    function stopSwapping(){ if(swapTimer) { clearInterval(swapTimer); swapTimer = null; } }
+
+    function showSwapNote(text){
+      swapIndicatorEl.innerHTML = `Swapped: <strong>${escapeHtml(text)}</strong>`;
+      setTimeout(()=>{ swapIndicatorEl.innerHTML = `New cringe word appears every <strong>${SWAP_INTERVAL_MS/1000}s</strong>`; }, 1600);
+    }
+
+    function escapeHtml(str){ return str.replace(/[&<>"']/g, s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s])); }
+
+    // ======= Leaderboard =======
+    function renderLeaderboard(){
+      const sortedWords = WORDS
+        .map(word => ({ word, votes: counts[word] || 0 }))
+        .filter(item => item.votes > 0)
+        .sort((a, b) => b.votes - a.votes)
+        .slice(0, 10); // Top 10
+
+      if (sortedWords.length === 0) {
+        leaderboardListEl.innerHTML = '<div class="no-votes">No votes yet! Start clicking the words you\'re tired of hearing.</div>';
+        return;
+      }
+
+      const rankEmojis = ['🥇', '🥈', '🥉'];
+      const rankTexts = ['GOLD', 'SILVER', 'BRONZE'];
+      
+      leaderboardListEl.innerHTML = sortedWords.map((item, index) => {
+        const rank = index + 1;
+        const emoji = rankEmojis[index] || '💯';
+        const rankText = rankTexts[index] || `#${rank}`;
+        const plural = item.votes === 1 ? 'vote' : 'votes';
+        
+        return `
+          <div class="leaderboard-item">
+            <span class="leaderboard-rank">${rankText}</span>
+            <span class="leaderboard-emoji">${emoji}</span>
+            <span class="leaderboard-word">${escapeHtml(item.word)}</span>
+            <span class="leaderboard-votes">${item.votes} ${plural}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ======= Controls =======
+    function addCustomWord() {
+      const input = byId('customWordInput');
+      const word = input.value.trim();
+      
+      if (!word) {
+        alert('Please enter a word!');
+        return;
+      }
+      
+      if (word.length > 50) {
+        alert('Word is too long (max 50 characters)');
+        return;
+      }
+      
+      if (WORDS.includes(word)) {
+        alert('This word is already in the list!');
+        input.value = '';
+        return;
+      }
+      
+      // Add word to the list
+      WORDS.push(word);
+      counts[word] = 0;
+      
+      // Add to visible words if we have space
+      if (visible.length < VISIBLE_SLOTS) {
+        visible.push(word);
+        save('visible', visible);
+      }
+      
+      // Clear input and re-render
+      input.value = '';
+      render();
+      renderLeaderboard();
+      
+      // Show success feedback
+      const btn = byId('addWordBtn');
+      const originalText = btn.textContent;
+      btn.textContent = '✅ Added!';
+      setTimeout(() => { btn.textContent = originalText; }, 1500);
+    }
+    
+    byId('addWordBtn').addEventListener('click', addCustomWord);
+    
+    byId('customWordInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        addCustomWord();
+      }
+    });
+    
+    // Click leaderboard to scroll to full view
+    byId('leaderboard').addEventListener('click', () => {
+      const leaderboard = byId('leaderboard');
+      leaderboard.classList.add('full-view');
+      leaderboard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    // ======= Init =======
+    render();
+    renderLeaderboard();
+    startSwapping();
+
+    // Cleanup on hide
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.hidden) stopSwapping(); else startSwapping();
+    });
+  })();
+  </script>
+</body>
+</html>
